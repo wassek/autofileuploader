@@ -59,7 +59,7 @@
     <name>autoFileUploader</name>
     <version>1.0-SNAPSHOT</version>    
     <packaging>bundle</packaging>
-    <description>This is the custom module (autoFileUploader) for running on a Digital Experience Manager server.</description>
+    <description>This is the custom module (autoFileUploader) for running on a Digital Experience Manager server. </description>
 
     <scm>
         <connection>scm:git:git@github.com:wassek/autofileuploader.git</connection>
