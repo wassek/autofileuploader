@@ -62,9 +62,14 @@
     <description>This is the custom module (autoFileUploader) for running on a Digital Experience Manager server.</description>
 
     <scm>
-        <connection>scm:dummy:uri</connection>
-        <developerConnection>scm:dummy:uri</developerConnection>
+        <connection>scm:git:git@github.com:wassek/autofileuploader.git</connection>
+        <developerConnection>scm:git:git@github.com:wassek/autofileuploader.git</developerConnection>
+		<url>https://github.com/wassek/autofileuploader</url>
     </scm>
+	
+	<properties>
+        <jahia-module-type>system</jahia-module-type>
+    </properties>
 
     <repositories>
         <repository>
