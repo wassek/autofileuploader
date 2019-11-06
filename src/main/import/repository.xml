@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<content xmlns:j="http://www.jahia.org/jahia/1.0" xmlns:jcr="http://www.jcp.org/jcr/1.0">
+    <modules jcr:primaryType="jnt:modules">
+        <autofileuploader j:dependencies="default"
+                        j:modulePriority="0"
+                        j:moduleType="module"
+                        j:title="autoFileUploader"
+                        jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                        jcr:primaryType="jnt:module">
+                <sources jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                  jcr:primaryType="jnt:moduleVersionFolder"
+                  j:staticMountPointProviderKey="module-autofileuploader-1.0-SNAPSHOT">
+                    <pom.xml jcr:primaryType="jnt:xmlFile"/>
+                    <src jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                 jcr:primaryType="jnt:folder">
+                        <main jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                     jcr:primaryType="jnt:folder">
+                            <java jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                        jcr:primaryType="jnt:javaPackageFolder">
+                                <org jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                          jcr:primaryType="jnt:javaPackageFolder">
+                                    <jahia jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                               jcr:primaryType="jnt:folder">
+                                        <modules jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                                    jcr:primaryType="jnt:javaPackageFolder">
+                                            <autofileuploader jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                                                jcr:primaryType="jnt:javaPackageFolder">
+                                                <services jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                                           jcr:primaryType="jnt:javaPackageFolder">
+                                                    <AutoFileUploadService.java jcr:primaryType="jnt:javaSourceFile"/>
+                                                </services>
+                                            </autofileuploader>
+                                        </modules>
+                                    </jahia>
+                                </org>
+                            </java>
+                            <resources jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                             jcr:primaryType="jnt:folder">
+                                <META-INF jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                               jcr:primaryType="jnt:metaInfFolder">
+                                    <spring jcr:mixinTypes="jmix:hasExternalProviderExtension"
+                                jcr:primaryType="jnt:folder">
+                                        <autofileuploader.xml jcr:primaryType="jnt:xmlFile"/>
+                                    </spring>
+                                </META-INF>
+                            </resources>
+                        </main>
+                    </src>
+                </sources>
+                
+                <portlets jcr:primaryType="jnt:portletFolder"/>
+                <files jcr:primaryType="jnt:folder"/>
+                <contents jcr:primaryType="jnt:contentFolder"/>
+                <templates j:rootTemplatePath="/base" jcr:primaryType="jnt:templatesFolder">
+                    <files jcr:primaryType="jnt:folder"/>
+                    <contents jcr:primaryType="jnt:contentFolder"/>
+                </templates>
+                
+            </autofileuploader>
+    </modules>
+</content>
