@@ -5,8 +5,10 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.StringTokenizer;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -17,16 +19,21 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.NotFileFilter;
 import org.apache.commons.io.filefilter.SuffixFileFilter;
 import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.jahia.api.Constants;
 import org.jahia.exceptions.JahiaInitializationException;
+import org.jahia.modules.autofileuploader.admin.AutoFileUploaderSettingsFlow;
 import org.jahia.registries.ServicesRegistry;
 import org.jahia.services.JahiaAfterInitializationService;
 import org.jahia.services.content.JCRCallback;
 import org.jahia.services.content.JCRContentUtils;
 import org.jahia.services.content.JCRNodeWrapper;
+import org.jahia.services.content.JCRPublicationService;
+import org.jahia.services.content.JCRSessionFactory;
 import org.jahia.services.content.JCRSessionWrapper;
 import org.jahia.services.content.JCRTemplate;
 import org.jahia.services.usermanager.JahiaUser;
 import org.jahia.services.usermanager.JahiaUserManagerService;
+import org.jahia.settings.SettingsBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,10 +41,10 @@ public class AutoFileUploadService implements JahiaAfterInitializationService {
 
 	private static Logger logger = LoggerFactory.getLogger(AutoFileUploadService.class);
 
-	private String importdiskpath;
-	private String webappRootPath;
-	private int scanInterval;
+	private String importdiskpath = SettingsBean.getInstance().getJahiaVarDiskPath() + "/files";
+	private long scanInterval;
 	private List<String> ignoreFiles;
+	private boolean autoPublish = false;
 
 	private Timer watchdog;
 
@@ -64,8 +71,10 @@ public class AutoFileUploadService implements JahiaAfterInitializationService {
 									logger.info("File:" + file.getPath());
 
 									String uploadPath = file.getPath().substring(path.length());
+									uploadPath = uploadPath.substring(0, uploadPath.length() - file.getName().length());
+
 									String fileSeperator = (String) System.getProperty("file.separator");
-									logger.info("File" + file.getName() + " will be uploaded to " + fileSeperator
+									logger.info("File " + file.getName() + " will be uploaded to " + fileSeperator
 											+ "sites" + uploadPath);
 									StringTokenizer tokenizer = new StringTokenizer(uploadPath, fileSeperator);
 									// create folders
@@ -74,6 +83,7 @@ public class AutoFileUploadService implements JahiaAfterInitializationService {
 									String nodeName = null;
 									boolean toSave = false;
 									boolean nextFile = false;
+									List<String> uuids = new ArrayList<String>();
 									while (tokenizer.hasMoreElements()) {
 										nodeName = tokenizer.nextToken();
 										if (folderNode.hasNode(nodeName)) {
@@ -88,32 +98,39 @@ public class AutoFileUploadService implements JahiaAfterInitializationService {
 												break;
 
 											} else {
-												// create folder
-												if (tokenizer.hasMoreTokens()) { // check if last
-													folderNode = folderNode.addNode(nodeName, "jnt:folder");
-													counter++;
-													toSave = true;
-												}
+												//create folder
+												folderNode = folderNode.addNode(nodeName, "jnt:folder");
+											    uuids.add(folderNode.getIdentifier());
+												counter++;
+												toSave = true;
 											}
 										}
 									}
 									if (toSave) {
 										session.save(); // create all folders
 									}
-									if (!nextFile) {
+									if (!nextFile && !session.itemExists(folderNode.getPath() + "/" + file.getName()) ) {
 										// upload file in folderNode
-										String mime = JCRContentUtils.getMimeType(nodeName);
+										String mime = JCRContentUtils.getMimeType(file.getName());
 										try {
 											InputStream is = new FileInputStream(file);
-											JCRNodeWrapper uploadedfile = folderNode.uploadFile(nodeName, is, mime);
+											JCRNodeWrapper uploadedfile = folderNode.uploadFile(file.getName(), is, mime);
 											uploadedfile.saveSession();
+											if (isAutoPublish()) {
+												uuids.add(uploadedfile.getIdentifier());
+												JCRSessionFactory.getInstance().setCurrentUser(session.getUser());
+												JCRPublicationService.getInstance().publish(uuids, Constants.EDIT_WORKSPACE, Constants.LIVE_WORKSPACE, null);
+											}
 											is.close();
+											file.delete();
 										} catch (FileNotFoundException ex) {
 											logger.error("FileNotFound " + uploadPath, ex);
 										} catch (IOException ex) {
 											logger.error("I/O Error on " + uploadPath, ex);
 										}
 
+									} else {
+										file.delete();
 									}
 
 								}
@@ -143,7 +160,14 @@ public class AutoFileUploadService implements JahiaAfterInitializationService {
 	}
 
 	public void initAfterAllServicesAreStarted() throws JahiaInitializationException {
-		checkSiteFolders(webappRootPath + importdiskpath);
+        
+		Map<String, String> initParams = AutoFileUploaderSettingsFlow.getAndSave(null);
+		scanInterval = Long.parseLong(initParams.get("intervall"));
+		importdiskpath = initParams.get("serverPath");
+		autoPublish = Boolean.valueOf(initParams.get("autopublish"));
+		
+		checkSiteFolders(importdiskpath);
+
 		// start watchdog for monitoring
 		watchdog = new Timer(true);
 		watchdog.schedule(new TimerTask() {
@@ -156,10 +180,10 @@ public class AutoFileUploadService implements JahiaAfterInitializationService {
 
 	private void perform() {
 		if (logger.isTraceEnabled()) {
-			logger.trace("Perform import check on " + webappRootPath + importdiskpath);
+			logger.trace("Perform import check on " +  importdiskpath);
 		}
 		try {
-			checkImport(webappRootPath + importdiskpath);
+			checkImport(importdiskpath);
 		} catch (RepositoryException ex) {
 			logger.error("A file couldn't import!", ex);
 		}
@@ -173,19 +197,11 @@ public class AutoFileUploadService implements JahiaAfterInitializationService {
 		this.importdiskpath = importdiskpath;
 	}
 
-	public String getWebappRootPath() {
-		return webappRootPath;
-	}
-
-	public void setWebappRootPath(String webappRootPath) {
-		this.webappRootPath = webappRootPath;
-	}
-
-	public int getScanInterval() {
+	public long getScanInterval() {
 		return scanInterval;
 	}
 
-	public void setScanInterval(int scanInterval) {
+	public void setScanInterval(long scanInterval) {
 		this.scanInterval = scanInterval;
 	}
 
@@ -195,6 +211,29 @@ public class AutoFileUploadService implements JahiaAfterInitializationService {
 
 	public void setIgnoreFiles(List<String> ignoreFiles) {
 		this.ignoreFiles = ignoreFiles;
+	}
+
+	public boolean isAutoPublish() {
+		return autoPublish;
+	}
+
+	public void setAutoPublish(boolean autoPublish) {
+		this.autoPublish = autoPublish;
+	}
+	
+	public void reInitialize(String serverPath, String intervall, boolean autoPublish) {
+		
+		setAutoPublish(autoPublish);
+		setScanInterval(Long.getLong(intervall));
+		setImportdiskpath(intervall);
+		if (watchdog != null) {
+			watchdog.cancel();
+		}
+		try {
+		initAfterAllServicesAreStarted();
+		} catch(JahiaInitializationException ex) {
+			logger.error("Reinit of AutoUploadService failed!", ex);
+		}
 	}
 
 }

@@ -4,8 +4,6 @@
     xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
   
     <bean id="AutoFileUploadService" class="org.jahia.modules.autofileuploader.services.AutoFileUploadService">
-		<property name="webappRootPath" value="${jahiaWebAppRoot:}"/>
-        <property name="importdiskpath" value="${autoUploadFilePathBasedOnWebRoot:/../../../digital-factory-data/files}"/>
 		<property name="scanInterval" value="${fileUploadScanInterval:30000}"/>
         <property name="ignoreFiles">
             <list>
